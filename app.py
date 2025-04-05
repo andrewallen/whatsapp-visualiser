@@ -4,8 +4,16 @@ from flask import Flask, render_template, url_for
 
 app = Flask(__name__)
 
-CHAT_EXPORT_DIR = "WhatsApp Chat - Tough Mudder"
-# Correctly join 'static', the export dir, and the filename
+# --- Configuration ---
+# Set these environment variables before running the script,
+# otherwise the default values will be used.
+# Example (Mac/Linux): export WHATSAPP_CHAT_DIR="My Chat Export"
+# Example (Windows CMD): set WHATSAPP_CHAT_DIR="My Chat Export"
+# Example (Windows PowerShell): $env:WHATSAPP_CHAT_DIR="My Chat Export"
+CHAT_EXPORT_DIR = os.environ.get('WHATSAPP_CHAT_DIR', 'WhatsApp Chat - Tough Mudder')
+YOUR_NAME = os.environ.get('WHATSAPP_YOUR_NAME', 'Andrew Allen')
+# --- End Configuration ---
+
 CHAT_FILE_PATH = os.path.join("static", CHAT_EXPORT_DIR, "_chat.txt")
 MEDIA_FOLDER = os.path.join('static', CHAT_EXPORT_DIR) # Store media in static for serving
 
