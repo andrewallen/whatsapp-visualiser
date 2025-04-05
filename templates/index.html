@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Use the chat_title variable passed from Flask -->
+    <title>{{ chat_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <!-- Modify existing H2 to use the chat_title variable -->
+            <h2>{{ chat_title }}</h2>
+        </div>
+        <div class="chat-messages">
+            {% for message in messages %}
+                {% if message.type == 'date_separator' %}
+                    <div class="message date-separator">
+                        <span>{{ message.text }}</span>
+                    </div>
+                {% elif message.type == 'system' %}
+                    <div class="message system-message">
+                        <span>{{ message.text }}</span>
+                    </div>
+                {% elif message.type == 'text' or message.type == 'media' %}
+                    {# Assign a consistent class for all user messages #}
+                    {% set sender_class = 'message-in' %}
+                    <div class="message {{ sender_class }}">
+                        <div class="message-bubble">
+                            <span class="sender-name">{{ message.sender }}</span>
+                            {% if message.type == 'media' %}
+                                {% if message.media_type == 'image' %}
+                                    <div class="media-container image-container" data-src="{{ message.media_path }}">
+                                        <img src="{{ message.media_path }}" alt="Image attachment" class="chat-media chat-image">
+                                    </div>
+                                {% elif message.media_type == 'video' %}
+                                    <div class="media-container">
+                                        <video controls class="chat-media chat-video">
+                                            <source src="{{ message.media_path }}" type="video/mp4"> <!-- Adjust type if needed -->
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                {% else %}
+                                    <p>[Unsupported media type: {{ message.media_path }}]</p>
+                                {% endif %}
+                                {% if message.caption %}
+                                   <p class="message-text">{{ message.caption | replace('\\n', '<br>') | safe }}</p>
+                                {% endif %}
+                            {% else %}
+                                {# Use |safe filter cautiously, ensure input is sanitized if coming from untrusted source #}
+                                {# Use replace filter to convert newlines to <br> tags #}
+                                <p class="message-text">{{ message.text | replace('\\n', '<br>') | safe }}</p>
+                            {% endif %}
+                            <span class="message-time">{{ message.time }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <p>No messages found or unable to parse chat file.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Lightbox Modal Structure -->
+    <div id="lightbox-modal" class="lightbox-modal">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-content" id="lightbox-image">
+    </div>
+
+    <script>
+        // Get the modal elements
+        const modal = document.getElementById('lightbox-modal');
+        const modalImg = document.getElementById('lightbox-image');
+        const closeBtn = document.querySelector('.lightbox-close');
+
+        // Get all image containers that should trigger the lightbox
+        const imageContainers = document.querySelectorAll('.image-container');
+
+        // Add click listener to each image container
+        imageContainers.forEach(container => {
+            container.addEventListener('click', function() {
+                modal.style.display = "block";
+                modalImg.src = this.dataset.src; // Use data-src for full image
+            });
+        });
+
+        // Add click listener to the close button
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = "none";
+        });
+
+        // Add click listener to the modal background (to close if clicking outside image)
+        modal.addEventListener('click', function(event) {
+            // Close if the click is on the modal background itself, not the image
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>
