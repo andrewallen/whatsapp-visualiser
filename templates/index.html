@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Use the chat_title variable passed from Flask -->
+    <!-- Use the chat title passed from Flask -->
     <title>{{ chat_title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <!-- Modify existing H2 to use the chat_title variable -->
-            <h2>{{ chat_title }}</h2>
+            <!-- Display the chat title in the header -->
+            <h1>{{ chat_title }}</h1>
+            <button id="gallery-button">Media Gallery</button> <!-- Added Gallery Button -->
         </div>
-        <div class="chat-messages">
+        <div class="chat-messages" id="chat-messages">
             {% for message in messages %}
                 {% if message.type == 'date_separator' %}
                     <div class="message date-separator">
@@ -24,51 +25,66 @@
                         <span>{{ message.text }}</span>
                     </div>
                 {% elif message.type == 'text' or message.type == 'media' %}
-                    {# Assign a consistent class for all user messages #}
-                    {% set sender_class = 'message-in' %}
-                    <div class="message {{ sender_class }}">
+                    {# Determine message class based on sender #}
+                    {% set msg_class = 'message-in' if message.sender != your_name else 'message-out' %}
+                    <div class="message {{ msg_class }}">
                         <div class="message-bubble">
-                            <span class="sender-name">{{ message.sender }}</span>
+                            {% if message.sender != your_name %}
+                                <div class="sender-name">{{ message.sender }}</div>
+                            {% endif %}
+                            
+                            {# Handle Media #}
                             {% if message.type == 'media' %}
-                                {% if message.media_type == 'image' %}
-                                    <div class="media-container image-container" data-src="{{ message.media_path }}">
-                                        <img src="{{ message.media_path }}" alt="Image attachment" class="chat-media chat-image">
-                                    </div>
+                                {% if message.media_type == 'image' or message.media_type == 'sticker' %}
+                                    <img src="{{ message.media_path }}" alt="Image Attachment" class="chat-image" data-original-src="{{ message.media_path }}">
                                 {% elif message.media_type == 'video' %}
-                                    <div class="media-container">
-                                        <video controls class="chat-media chat-video">
-                                            <source src="{{ message.media_path }}" type="video/mp4"> <!-- Adjust type if needed -->
-                                            Your browser does not support the video tag.
-                                        </video>
-                                    </div>
-                                {% else %}
-                                    <p>[Unsupported media type: {{ message.media_path }}]</p>
+                                    <video controls class="chat-video">
+                                        <source src="{{ message.media_path }}" type="video/mp4"> {# Basic type, might need refinement #}
+                                        Your browser does not support the video tag.
+                                    </video>
                                 {% endif %}
                                 {% if message.caption %}
-                                   <p class="message-text">{{ message.caption | replace('\\n', '<br>') | safe }}</p>
+                                    <div class="message-text">{{ message.caption | replace('\n', '<br>') | safe }}</div>
                                 {% endif %}
-                            {% else %}
-                                {# Use |safe filter cautiously, ensure input is sanitized if coming from untrusted source #}
-                                {# Use replace filter to convert newlines to <br> tags #}
-                                <p class="message-text">{{ message.text | replace('\\n', '<br>') | safe }}</p>
+                            {# Handle Text #}
+                            {% elif message.type == 'text' %}
+                                <div class="message-text">{{ message.text | replace('\n', '<br>') | safe }}</div>
                             {% endif %}
-                            <span class="message-time">{{ message.time }}</span>
+
+                            <div class="message-time">{{ message.time }}</div>
                         </div>
                     </div>
                 {% endif %}
-            {% else %}
-                <p>No messages found or unable to parse chat file.</p>
             {% endfor %}
         </div>
     </div>
 
-    <!-- Lightbox Modal Structure -->
+    <!-- Image Lightbox Modal -->
     <div id="lightbox-modal" class="lightbox-modal">
         <span class="lightbox-close">&times;</span>
-        <img class="lightbox-content" id="lightbox-image">
+        <img class="lightbox-content" id="lightbox-img">
     </div>
 
-    <!-- Link to the external JavaScript file -->
+    <!-- Media Gallery Modal -->
+    <div id="media-gallery-modal" class="gallery-modal">
+        <span class="gallery-close">&times;</span>
+        <h2>Media Gallery</h2>
+        <div id="media-gallery-grid" class="gallery-grid">
+            {% for item in media_items %}
+                <div class="gallery-item">
+                    {% if item.media_type == 'image' %}
+                        <img src="{{ item.media_path }}" alt="Gallery Image" loading="lazy">
+                    {% elif item.media_type == 'video' %}
+                        <video controls preload="metadata">
+                            <source src="{{ item.media_path }}#t=0.1" type="video/mp4"> <!-- #t=0.1 for thumbnail hint -->
+                            Your browser does not support the video tag.
+                        </video>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

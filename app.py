@@ -19,6 +19,7 @@ MEDIA_FOLDER = os.path.join('static', CHAT_EXPORT_DIR) # Store media in static f
 
 def parse_chat_file(file_path):
     messages = []
+    media_items = [] # Add list to store media items
     current_date = None
 
     # Regex for standard messages: [DD/MM/YYYY, HH:MM:SS] Sender: Message
@@ -90,9 +91,9 @@ def parse_chat_file(file_path):
                             media_type = 'image'
                         elif filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):
                             media_type = 'video'
-                        elif filename.lower().endswith('.webp'): # Treat webp as stickers/images
-                            media_type = 'sticker'
-
+                        # Remove sticker distinction for gallery, treat as image
+                        # elif filename.lower().endswith('.webp'): # Treat webp as stickers/images
+                        #     media_type = 'sticker'
 
                         # Extract caption (text before/after the media tag)
                         # Replacing the found tag, then stripping.
@@ -108,6 +109,13 @@ def parse_chat_file(file_path):
                             'media_type': media_type,
                             'caption': caption
                         })
+                        # Add to media gallery list if it's an image or video
+                        if media_type in ['image', 'video']:
+                            media_items.append({
+                                'media_path': media_path,
+                                'media_type': media_type,
+                                'filename': filename # Keep filename for reference if needed
+                            })
                     elif message_text: # Only add if there's actual text content left
                         print("Added as Text Message.")
                         messages.append({
@@ -145,30 +153,31 @@ def parse_chat_file(file_path):
 
     except FileNotFoundError:
         print(f"Error: Chat file not found at {file_path}")
-        return None
+        return None, None
     except Exception as e:
         print(f"Error parsing chat file: {e}")
         import traceback
         traceback.print_exc() # Print full traceback for debugging
-        return None
+        return None, None
 
     print("\nParsing complete.")
     if not messages:
         print("Warning: No messages were parsed.")
     else:
-        print(f"Successfully parsed {len(messages)} items (messages/separators).")
+        print(f"Successfully parsed {len(messages)} items (messages/separators) and found {len(media_items)} media items.")
 
-    return messages
+    return messages, media_items
 
 
 @app.route('/')
 def index():
-    messages = parse_chat_file(CHAT_FILE_PATH)
+    messages, media_items = parse_chat_file(CHAT_FILE_PATH) # Unpack both results
     if messages is None:
         return "Error reading or parsing chat file. Check console for details.", 500
     # Use the directory name as the title (can be refined later if needed)
     chat_title = CHAT_EXPORT_DIR
-    return render_template('index.html', messages=messages, chat_title=chat_title)
+    # Pass media_items to the template
+    return render_template('index.html', messages=messages, chat_title=chat_title, your_name=YOUR_NAME, media_items=media_items)
 
 if __name__ == '__main__':
     app.run(debug=True)

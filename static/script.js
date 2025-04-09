@@ -1,14 +1,10 @@
-// Get the modal elements
-const modal = document.getElementById('lightbox-modal');
-const modalImg = document.getElementById('lightbox-image');
-const closeBtn = document.querySelector('.lightbox-close');
+document.addEventListener('DOMContentLoaded', (event) => {
+    // Lightbox functionality
+    const modal = document.getElementById("lightbox-modal");
+    const modalImg = document.getElementById("lightbox-image");
+    const imageContainers = document.querySelectorAll('.image-container');
+    const closeBtn = document.querySelector(".lightbox-close");
 
-// Get all image containers that should trigger the lightbox
-const imageContainers = document.querySelectorAll('.image-container');
-
-// Check if modal elements exist before adding listeners
-if (modal && modalImg && closeBtn && imageContainers.length > 0) {
-    // Add click listener to each image container
     imageContainers.forEach(container => {
         container.addEventListener('click', function() {
             modal.style.display = "block";
@@ -16,16 +12,44 @@ if (modal && modalImg && closeBtn && imageContainers.length > 0) {
         });
     });
 
-    // Add click listener to the close button
-    closeBtn.addEventListener('click', function() {
-        modal.style.display = "none";
-    });
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = "none";
+        })
+    }
 
-    // Add click listener to the modal background (to close if clicking outside image)
+    // Close lightbox if clicked outside the image
     modal.addEventListener('click', function(event) {
-        // Close if the click is on the modal background itself, not the image
         if (event.target === modal) {
             modal.style.display = "none";
         }
-    });
-}
+    })
+
+    // Media Gallery Functionality
+    const galleryButton = document.getElementById('gallery-button');
+    const galleryModal = document.getElementById('media-gallery-modal');
+    const galleryCloseBtn = document.querySelector('.gallery-close');
+    const galleryGrid = document.getElementById('media-gallery-grid'); // Get grid for potential future interactions
+
+    if (galleryButton && galleryModal) {
+        galleryButton.addEventListener('click', function() {
+            galleryModal.style.display = "block";
+        })
+    }
+
+    if (galleryCloseBtn) {
+        galleryCloseBtn.addEventListener('click', function() {
+            galleryModal.style.display = "none";
+        })
+    }
+
+    window.addEventListener('click', function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+        // Also handle closing the gallery modal if clicked outside its content area
+        if (event.target == galleryModal) {
+            galleryModal.style.display = "none";
+        }
+    })
+});

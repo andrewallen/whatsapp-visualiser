@@ -25,17 +25,36 @@ body {
 }
 
 .chat-header {
-    background-color: #075E54; /* WhatsApp green */
+    background-color: #005e54; /* WhatsApp green header */
     color: white;
     padding: 10px 15px;
-    text-align: center;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
+    display: flex; /* Use flexbox for alignment */
+    justify-content: space-between; /* Space between title and button */
+    align-items: center; /* Vertically center items */
 }
 
-.chat-header h2 {
+.chat-header h1 {
     margin: 0;
     font-size: 1.2em;
+    font-weight: 500;
+}
+
+/* Added Gallery Button Style */
+#gallery-button {
+    background-color: #128c7e; /* Slightly lighter green */
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+}
+
+#gallery-button:hover {
+    background-color: #075e54; /* Darker green on hover */
 }
 
 .chat-messages {
@@ -134,13 +153,17 @@ video.chat-media {
     background-color: #000; /* Black background for video player */
 }
 
-/* Style images specifically for lightbox trigger */
-.chat-image {
+/* Style images and videos specifically for lightbox trigger */
+.chat-image, .chat-video {
+    max-width: 100%; /* Ensure image/video doesn't overflow bubble */
+    height: auto; /* Maintain aspect ratio */
+    border-radius: 5px;
+    display: block; /* Remove extra space below */
     cursor: pointer; /* Indicate it's clickable */
     transition: opacity 0.2s ease-in-out;
 }
 
-.chat-image:hover {
+.chat-image:hover, .chat-video:hover {
     opacity: 0.8;
 }
 
@@ -149,20 +172,21 @@ video.chat-media {
     display: none; /* Hidden by default */
     position: fixed; /* Stay in place */
     z-index: 1000; /* Sit on top */
-    padding-top: 50px; /* Location of the box */
     left: 0;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
+    width: 100%;
+    height: 100%;
     overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+    background-color: rgba(0, 0, 0, 0.9); /* Black w/ opacity */
+    justify-content: center;
+    align-items: center;
 }
 
 .lightbox-content {
     margin: auto;
     display: block;
-    max-width: 85%;
-    max-height: 85%;
+    max-width: 80%;
+    max-height: 80%;
     object-fit: contain; /* Scale while preserving aspect ratio */
 }
 
@@ -182,6 +206,73 @@ video.chat-media {
     color: #bbb;
     text-decoration: none;
     cursor: pointer;
+}
+
+/* Media Gallery Modal Styles */
+.gallery-modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1001; /* Above lightbox potentially, or just high */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Slightly less dark than lightbox */
+    overflow-y: auto; /* Allow vertical scrolling for gallery grid */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.gallery-modal h2 {
+    color: #fff;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.gallery-close {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+    z-index: 1002; /* Ensure close button is on top */
+}
+
+.gallery-close:hover,
+.gallery-close:focus {
+    color: #bbb;
+    text-decoration: none;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Responsive grid */
+    gap: 10px;
+    padding-bottom: 40px; /* Space at bottom */
+}
+
+.gallery-item {
+    background-color: #333; /* Dark background for items */
+    border-radius: 4px;
+    overflow: hidden; /* Ensure content fits */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 1 / 1; /* Square items */
+}
+
+.gallery-item img,
+.gallery-item video {
+    max-width: 100%;
+    max-height: 100%;
+    height: auto;
+    width: auto;
+    display: block; /* Remove extra space below */
+    object-fit: cover; /* Cover the area, might crop */
 }
 
 /* Add Animation (optional) */
