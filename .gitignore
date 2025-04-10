@@ -96,4 +96,4 @@ dmypy.json
 .pyre/
 
 # Personal Chat Data - IMPORTANT
-static/WhatsApp Chat - Tough Mudder/
+static/*/
