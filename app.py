@@ -1,5 +1,6 @@
 import re
 import os
+from functools import lru_cache
 from flask import Flask, render_template, url_for
 
 app = Flask(__name__)
@@ -169,9 +170,32 @@ def parse_chat_file(file_path):
     return messages, media_items
 
 
+def _get_file_mtime(path):
+    """Return file modification time or None if unavailable."""
+    try:
+        return os.path.getmtime(path)
+    except OSError:
+        return None
+
+
+@lru_cache(maxsize=1)
+def _cached_parse(path, mtime):
+    """Parse chat file with caching based on modification time."""
+    return parse_chat_file(path)
+
+
+def load_chat():
+    """Return cached messages and media items, refreshing if the file changed."""
+    mtime = _get_file_mtime(CHAT_FILE_PATH)
+    return _cached_parse(CHAT_FILE_PATH, mtime)
+
+# Prime cache at startup
+load_chat()
+
+
 @app.route('/')
 def index():
-    messages, media_items = parse_chat_file(CHAT_FILE_PATH) # Unpack both results
+    messages, media_items = load_chat()
     if messages is None:
         return "Error reading or parsing chat file. Check console for details.", 500
     # Use the directory name as the title (can be refined later if needed)
