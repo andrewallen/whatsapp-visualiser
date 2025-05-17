@@ -17,7 +17,17 @@ YOUR_NAME = os.environ.get('WHATSAPP_YOUR_NAME', 'Andrew Allen')
 CHAT_FILE_PATH = os.path.join("static", CHAT_EXPORT_DIR, "_chat.txt")
 MEDIA_FOLDER = os.path.join('static', CHAT_EXPORT_DIR) # Store media in static for serving
 
-def parse_chat_file(file_path):
+def parse_chat_file(file_path, base_media_url):
+    """Parse the WhatsApp chat file.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the ``_chat.txt`` file.
+    base_media_url : str
+        Precomputed base URL for media files inside ``static``.
+    """
+
     messages = []
     media_items = [] # Add list to store media items
     current_date = None
@@ -85,7 +95,7 @@ def parse_chat_file(file_path):
                     if media_match:
                         filename = media_match.group(1).strip()
                         print(f"Found Media: '{filename}'")
-                        media_path = url_for('static', filename=os.path.join(CHAT_EXPORT_DIR, filename))
+                        media_path = os.path.join(base_media_url, filename)
                         media_type = 'unknown'
                         if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                             media_type = 'image'
@@ -171,7 +181,8 @@ def parse_chat_file(file_path):
 
 @app.route('/')
 def index():
-    messages, media_items = parse_chat_file(CHAT_FILE_PATH) # Unpack both results
+    base_media_url = url_for('static', filename=CHAT_EXPORT_DIR)
+    messages, media_items = parse_chat_file(CHAT_FILE_PATH, base_media_url) # Unpack both results
     if messages is None:
         return "Error reading or parsing chat file. Check console for details.", 500
     # Use the directory name as the title (can be refined later if needed)
