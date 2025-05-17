@@ -18,24 +18,27 @@ YOUR_NAME = os.environ.get('WHATSAPP_YOUR_NAME', 'Andrew Allen')
 CHAT_FILE_PATH = os.path.join("static", CHAT_EXPORT_DIR, "_chat.txt")
 MEDIA_FOLDER = os.path.join('static', CHAT_EXPORT_DIR) # Store media in static for serving
 
+# --- Precompiled Regex Patterns ---
+# Regex for standard messages: [DD/MM/YYYY, HH:MM:SS] Sender: Message
+# Made sender part non-greedy and message part greedy
+message_pattern = re.compile(
+    r'^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\] (.+?): (.*)$',
+    re.DOTALL
+)
+# Regex for system messages (joining, creating group, etc.)
+system_pattern = re.compile(
+    r'^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\] (.*)$'
+)
+# Regex for media attachments - use search to find it anywhere in the message
+media_pattern = re.compile(r'<attached: (.+?)>')
+# Regex for date separators (assuming they are on their own line like DD/MM/YYYY)
+date_separator_pattern = re.compile(r'^(\d{1,2}/\d{1,2}/\d{2,4})$')
+# --- End Precompiled Patterns ---
+
 def parse_chat_file(file_path):
     messages = []
-    media_items = [] # Add list to store media items
+    media_items = []  # Add list to store media items
     current_date = None
-
-    # Regex for standard messages: [DD/MM/YYYY, HH:MM:SS] Sender: Message
-    # Made sender part non-greedy and message part greedy
-    message_pattern = re.compile(
-        r'^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\] (.+?): (.*)$', re.DOTALL
-    )
-    # Regex for system messages (joining, creating group, etc.)
-    system_pattern = re.compile(
-        r'^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\] (.*)$'
-    )
-    # Regex for media attachments - use search to find it anywhere in the message
-    media_pattern = re.compile(r'<attached: (.+?)>')
-    # Regex for date separators (assuming they are on their own line like DD/MM/YYYY)
-    date_separator_pattern = re.compile(r'^(\d{1,2}/\d{1,2}/\d{2,4})$')
 
     print(f"Attempting to read chat file: {file_path}")
     try:
