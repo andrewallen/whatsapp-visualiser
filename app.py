@@ -12,6 +12,8 @@ app = Flask(__name__)
 # Example (Windows PowerShell): $env:WHATSAPP_CHAT_DIR="My Chat Export"
 CHAT_EXPORT_DIR = os.environ.get('WHATSAPP_CHAT_DIR', 'WhatsApp Chat - Tough Mudder')
 YOUR_NAME = os.environ.get('WHATSAPP_YOUR_NAME', 'Andrew Allen')
+# Toggle verbose parsing logs. Set environment variable DEBUG_PARSE to '1', 'true', or 'yes' to enable.
+DEBUG_PARSE = os.environ.get('DEBUG_PARSE', 'false').lower() in ('1', 'true', 'yes')
 # --- End Configuration ---
 
 CHAT_FILE_PATH = os.path.join("static", CHAT_EXPORT_DIR, "_chat.txt")
@@ -36,7 +38,8 @@ def parse_chat_file(file_path):
     # Regex for date separators (assuming they are on their own line like DD/MM/YYYY)
     date_separator_pattern = re.compile(r'^(\d{1,2}/\d{1,2}/\d{2,4})$')
 
-    print(f"Attempting to read chat file: {file_path}")
+    if DEBUG_PARSE:
+        print(f"Attempting to read chat file: {file_path}")
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             line_num = 0
@@ -44,10 +47,12 @@ def parse_chat_file(file_path):
                 line_num += 1
                 # *** Ensure LRM is removed from the START of the line FIRST ***
                 line = line.lstrip('\u200e').strip()
-                print(f"\n--- Processing Line {line_num}: {line[:100]}...") # Print start of line
+                if DEBUG_PARSE:
+                    print(f"\n--- Processing Line {line_num}: {line[:100]}...") # Print start of line
 
                 if not line: # Skip empty lines
-                    print("Skipping empty line.")
+                    if DEBUG_PARSE:
+                        print("Skipping empty line.")
                     continue
 
                 # Check for date separator first
@@ -57,7 +62,8 @@ def parse_chat_file(file_path):
                     # Attempt to standardise date format if needed (e.g., YYYY from YY)
                     # For simplicity, we'll just use the matched string for now
                     if date_str != current_date:
-                         print(f"Found Date Separator: {date_str}")
+                         if DEBUG_PARSE:
+                             print(f"Found Date Separator: {date_str}")
                          messages.append({'type': 'date_separator', 'text': date_str})
                          current_date = date_str # Update current date based on separator
                     continue # Move to next line after handling date separator
@@ -71,12 +77,14 @@ def parse_chat_file(file_path):
                     sender = sender.replace('\u200e', '').strip()
                     message_text = message_text.replace('\u200e', '').strip()
 
-                    print(f"Matched Standard Message: Date={date}, Time={time}, Sender='{sender}', Text='{message_text[:50]}...'")
+                    if DEBUG_PARSE:
+                        print(f"Matched Standard Message: Date={date}, Time={time}, Sender='{sender}', Text='{message_text[:50]}...'")
 
                     if date != current_date:
                          # Check if a date separator was *just* added for this date
                          if not messages or messages[-1].get('text') != date or messages[-1].get('type') != 'date_separator':
-                            print(f"Adding implicit Date Separator: {date}")
+                            if DEBUG_PARSE:
+                                print(f"Adding implicit Date Separator: {date}")
                             messages.append({'type': 'date_separator', 'text': date})
                          current_date = date
 
@@ -84,7 +92,8 @@ def parse_chat_file(file_path):
                     media_match = media_pattern.search(message_text)
                     if media_match:
                         filename = media_match.group(1).strip()
-                        print(f"Found Media: '{filename}'")
+                        if DEBUG_PARSE:
+                            print(f"Found Media: '{filename}'")
                         media_path = url_for('static', filename=os.path.join(CHAT_EXPORT_DIR, filename))
                         media_type = 'unknown'
                         if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
@@ -98,7 +107,8 @@ def parse_chat_file(file_path):
                         # Extract caption (text before/after the media tag)
                         # Replacing the found tag, then stripping.
                         caption = message_text.replace(media_match.group(0), '').strip()
-                        print(f"Media Type: {media_type}, Path: {media_path}, Caption: '{caption}'")
+                        if DEBUG_PARSE:
+                            print(f"Media Type: {media_type}, Path: {media_path}, Caption: '{caption}'")
 
                         messages.append({
                             'type': 'media',
@@ -117,7 +127,8 @@ def parse_chat_file(file_path):
                                 'filename': filename # Keep filename for reference if needed
                             })
                     elif message_text: # Only add if there's actual text content left
-                        print("Added as Text Message.")
+                        if DEBUG_PARSE:
+                            print("Added as Text Message.")
                         messages.append({
                             'type': 'text',
                             'date': date,
@@ -126,7 +137,8 @@ def parse_chat_file(file_path):
                             'text': message_text
                         })
                     else:
-                         print("Media matched, but no remaining text, skipping separate text message add.")
+                         if DEBUG_PARSE:
+                             print("Media matched, but no remaining text, skipping separate text message add.")
 
                 else:
                     # Attempt to match system messages
@@ -134,37 +146,47 @@ def parse_chat_file(file_path):
                     if sys_match:
                         date, time, sys_text = sys_match.groups()
                         sys_text = sys_text.strip()
-                        print(f"Matched System Message: '{sys_text}'")
+                        if DEBUG_PARSE:
+                            print(f"Matched System Message: '{sys_text}'")
                         # Optional: Add date separator if date changed
                         if date != current_date:
                             if not messages or messages[-1].get('text') != date or messages[-1].get('type') != 'date_separator':
-                                print(f"Adding implicit Date Separator: {date}")
+                                if DEBUG_PARSE:
+                                    print(f"Adding implicit Date Separator: {date}")
                                 messages.append({'type': 'date_separator', 'text': date})
                             current_date = date
 
                         messages.append({'type': 'system', 'text': sys_text, 'date': date, 'time': time})
                     # Handle potential multi-line messages (append to previous message if conditions met)
                     elif messages and line and messages[-1]['type'] == 'text':
-                        print(f"Appending to previous message: {line[:50]}...")
+                        if DEBUG_PARSE:
+                            print(f"Appending to previous message: {line[:50]}...")
                         messages[-1]['text'] += '\n' + line
                     else:
-                        print(f"Line did not match any pattern: {line[:100]}")
+                        if DEBUG_PARSE:
+                            print(f"Line did not match any pattern: {line[:100]}")
 
 
     except FileNotFoundError:
-        print(f"Error: Chat file not found at {file_path}")
+        if DEBUG_PARSE:
+            print(f"Error: Chat file not found at {file_path}")
         return None, None
     except Exception as e:
-        print(f"Error parsing chat file: {e}")
+        if DEBUG_PARSE:
+            print(f"Error parsing chat file: {e}")
         import traceback
-        traceback.print_exc() # Print full traceback for debugging
+        if DEBUG_PARSE:
+            traceback.print_exc() # Print full traceback for debugging
         return None, None
 
-    print("\nParsing complete.")
+    if DEBUG_PARSE:
+        print("\nParsing complete.")
     if not messages:
-        print("Warning: No messages were parsed.")
+        if DEBUG_PARSE:
+            print("Warning: No messages were parsed.")
     else:
-        print(f"Successfully parsed {len(messages)} items (messages/separators) and found {len(media_items)} media items.")
+        if DEBUG_PARSE:
+            print(f"Successfully parsed {len(messages)} items (messages/separators) and found {len(media_items)} media items.")
 
     return messages, media_items
 
