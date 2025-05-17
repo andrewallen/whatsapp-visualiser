@@ -1,14 +1,15 @@
 document.addEventListener('DOMContentLoaded', (event) => {
     // Lightbox functionality
     const modal = document.getElementById("lightbox-modal");
-    const modalImg = document.getElementById("lightbox-image");
-    const imageContainers = document.querySelectorAll('.image-container');
+    const modalImg = document.getElementById("lightbox-img");
+    const imageContainers = document.querySelectorAll('.chat-image');
     const closeBtn = document.querySelector(".lightbox-close");
 
     imageContainers.forEach(container => {
         container.addEventListener('click', function() {
             modal.style.display = "block";
-            modalImg.src = this.dataset.src; // Use data-src for full image
+            const src = this.dataset.originalSrc || this.src;
+            modalImg.src = src;
         });
     });
 
