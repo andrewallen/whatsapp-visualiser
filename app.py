@@ -1,7 +1,7 @@
 import re
 import os
 from functools import lru_cache
-from flask import Flask, render_template, url_for
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
@@ -89,7 +89,7 @@ def parse_chat_file(file_path):
                     if media_match:
                         filename = media_match.group(1).strip()
                         print(f"Found Media: '{filename}'")
-                        media_path = url_for('static', filename=os.path.join(CHAT_EXPORT_DIR, filename))
+                        media_rel_path = os.path.join(CHAT_EXPORT_DIR, filename)
                         media_type = 'unknown'
                         if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                             media_type = 'image'
@@ -102,23 +102,23 @@ def parse_chat_file(file_path):
                         # Extract caption (text before/after the media tag)
                         # Replacing the found tag, then stripping.
                         caption = message_text.replace(media_match.group(0), '').strip()
-                        print(f"Media Type: {media_type}, Path: {media_path}, Caption: '{caption}'")
+                        print(f"Media Type: {media_type}, Relative Path: {media_rel_path}, Caption: '{caption}'")
 
                         messages.append({
                             'type': 'media',
                             'date': date,
                             'time': time,
                             'sender': sender,
-                            'media_path': media_path,
+                            'media_rel_path': media_rel_path,
                             'media_type': media_type,
                             'caption': caption
                         })
                         # Add to media gallery list if it's an image or video
                         if media_type in ['image', 'video']:
                             media_items.append({
-                                'media_path': media_path,
+                                'media_rel_path': media_rel_path,
                                 'media_type': media_type,
-                                'filename': filename # Keep filename for reference if needed
+                                'filename': filename  # Keep filename for reference if needed
                             })
                     elif message_text: # Only add if there's actual text content left
                         print("Added as Text Message.")
