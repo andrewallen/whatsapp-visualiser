@@ -36,7 +36,7 @@
                             {# Handle Media #}
                             {% if message.type == 'media' %}
                                 {% if message.media_type == 'image' or message.media_type == 'sticker' %}
-                                    <img src="{{ url_for('static', filename=message.media_rel_path) }}" alt="Image Attachment" class="chat-image" data-original-src="{{ url_for('static', filename=message.media_rel_path) }}">
+                                    <img src="{{ url_for('static', filename=message.media_rel_path) }}" alt="Image Attachment" class="chat-image" data-original-src="{{ url_for('static', filename=message.media_rel_path) }}" loading="lazy">
                                 {% elif message.media_type == 'video' %}
                                     <video controls class="chat-video">
                                         <source src="{{ url_for('static', filename=message.media_rel_path) }}" type="video/mp4"> {# Basic type, might need refinement #}
