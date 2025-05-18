@@ -36,10 +36,10 @@
                             {# Handle Media #}
                             {% if message.type == 'media' %}
                                 {% if message.media_type == 'image' or message.media_type == 'sticker' %}
-                                    <img src="{{ message.media_path }}" alt="Image Attachment" class="chat-image" data-original-src="{{ message.media_path }}">
+                                    <img src="{{ url_for('static', filename=message.media_rel_path) }}" alt="Image Attachment" class="chat-image" data-original-src="{{ url_for('static', filename=message.media_rel_path) }}">
                                 {% elif message.media_type == 'video' %}
                                     <video controls class="chat-video">
-                                        <source src="{{ message.media_path }}" type="video/mp4"> {# Basic type, might need refinement #}
+                                        <source src="{{ url_for('static', filename=message.media_rel_path) }}" type="video/mp4"> {# Basic type, might need refinement #}
                                         Your browser does not support the video tag.
                                     </video>
                                 {% endif %}
@@ -73,10 +73,10 @@
             {% for item in media_items %}
                 <div class="gallery-item">
                     {% if item.media_type == 'image' %}
-                        <img src="{{ item.media_path }}" alt="Gallery Image" loading="lazy">
+                        <img src="{{ url_for('static', filename=item.media_rel_path) }}" alt="Gallery Image" loading="lazy">
                     {% elif item.media_type == 'video' %}
                         <video controls preload="metadata">
-                            <source src="{{ item.media_path }}#t=0.1" type="video/mp4"> <!-- #t=0.1 for thumbnail hint -->
+                            <source src="{{ url_for('static', filename=item.media_rel_path) }}#t=0.1" type="video/mp4"> <!-- #t=0.1 for thumbnail hint -->
                             Your browser does not support the video tag.
                         </video>
                     {% endif %}
