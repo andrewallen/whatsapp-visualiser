@@ -19,6 +19,7 @@ Before running, you need to tell the application where your chat export is and w
 1.  **Environment Variables (Recommended):**
     *   Set the `WHATSAPP_CHAT_DIR` variable to the exact name of your chat export directory (the one containing `_chat.txt`).
     *   Set the `WHATSAPP_YOUR_NAME` variable to your name *exactly* as it appears in the `_chat.txt` file after the timestamp.
+    *   *(Optional)* Set `WHATSAPP_LOG_LEVEL` (e.g., `DEBUG`, `INFO`) to control logging verbosity.
 
     **Examples:**
     *   **Mac/Linux (Terminal):**

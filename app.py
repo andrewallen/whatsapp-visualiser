@@ -1,9 +1,18 @@
 import re
 import os
+import logging
 from functools import lru_cache
 from flask import Flask, render_template
 
 app = Flask(__name__)
+
+# --- Logging Configuration ---
+LOG_LEVEL = os.environ.get('WHATSAPP_LOG_LEVEL', 'INFO').upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format='%(asctime)s [%(levelname)s] %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # --- Configuration ---
 # Set these environment variables before running the script,
@@ -40,7 +49,7 @@ def parse_chat_file(file_path):
     media_items = []  # Add list to store media items
     current_date = None
 
-    print(f"Attempting to read chat file: {file_path}")
+    logger.debug(f"Attempting to read chat file: {file_path}")
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             line_num = 0
@@ -48,10 +57,10 @@ def parse_chat_file(file_path):
                 line_num += 1
                 # *** Ensure LRM is removed from the START of the line FIRST ***
                 line = line.lstrip('\u200e').strip()
-                print(f"\n--- Processing Line {line_num}: {line[:100]}...") # Print start of line
+                logger.debug(f"\n--- Processing Line {line_num}: {line[:100]}...")
 
                 if not line: # Skip empty lines
-                    print("Skipping empty line.")
+                    logger.debug("Skipping empty line.")
                     continue
 
                 # Check for date separator first
@@ -61,7 +70,7 @@ def parse_chat_file(file_path):
                     # Attempt to standardise date format if needed (e.g., YYYY from YY)
                     # For simplicity, we'll just use the matched string for now
                     if date_str != current_date:
-                         print(f"Found Date Separator: {date_str}")
+                         logger.debug(f"Found Date Separator: {date_str}")
                          messages.append({'type': 'date_separator', 'text': date_str})
                          current_date = date_str # Update current date based on separator
                     continue # Move to next line after handling date separator
@@ -75,12 +84,15 @@ def parse_chat_file(file_path):
                     sender = sender.replace('\u200e', '').strip()
                     message_text = message_text.replace('\u200e', '').strip()
 
-                    print(f"Matched Standard Message: Date={date}, Time={time}, Sender='{sender}', Text='{message_text[:50]}...'")
+                    logger.debug(
+                        f"Matched Standard Message: Date={date}, Time={time}, "
+                        f"Sender='{sender}', Text='{message_text[:50]}...'"
+                    )
 
                     if date != current_date:
                          # Check if a date separator was *just* added for this date
                          if not messages or messages[-1].get('text') != date or messages[-1].get('type') != 'date_separator':
-                            print(f"Adding implicit Date Separator: {date}")
+                            logger.debug(f"Adding implicit Date Separator: {date}")
                             messages.append({'type': 'date_separator', 'text': date})
                          current_date = date
 
@@ -88,7 +100,7 @@ def parse_chat_file(file_path):
                     media_match = media_pattern.search(message_text)
                     if media_match:
                         filename = media_match.group(1).strip()
-                        print(f"Found Media: '{filename}'")
+                        logger.debug(f"Found Media: '{filename}'")
                         media_rel_path = os.path.join(CHAT_EXPORT_DIR, filename)
                         media_type = 'unknown'
                         if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
@@ -102,7 +114,9 @@ def parse_chat_file(file_path):
                         # Extract caption (text before/after the media tag)
                         # Replacing the found tag, then stripping.
                         caption = message_text.replace(media_match.group(0), '').strip()
-                        print(f"Media Type: {media_type}, Relative Path: {media_rel_path}, Caption: '{caption}'")
+                        logger.debug(
+                            f"Media Type: {media_type}, Relative Path: {media_rel_path}, Caption: '{caption}'"
+                        )
 
                         messages.append({
                             'type': 'media',
@@ -121,7 +135,7 @@ def parse_chat_file(file_path):
                                 'filename': filename  # Keep filename for reference if needed
                             })
                     elif message_text: # Only add if there's actual text content left
-                        print("Added as Text Message.")
+                        logger.debug("Added as Text Message.")
                         messages.append({
                             'type': 'text',
                             'date': date,
@@ -130,7 +144,7 @@ def parse_chat_file(file_path):
                             'text': message_text
                         })
                     else:
-                         print("Media matched, but no remaining text, skipping separate text message add.")
+                         logger.debug("Media matched, but no remaining text, skipping separate text message add.")
 
                 else:
                     # Attempt to match system messages
@@ -138,37 +152,39 @@ def parse_chat_file(file_path):
                     if sys_match:
                         date, time, sys_text = sys_match.groups()
                         sys_text = sys_text.strip()
-                        print(f"Matched System Message: '{sys_text}'")
+                        logger.debug(f"Matched System Message: '{sys_text}'")
                         # Optional: Add date separator if date changed
                         if date != current_date:
                             if not messages or messages[-1].get('text') != date or messages[-1].get('type') != 'date_separator':
-                                print(f"Adding implicit Date Separator: {date}")
+                                logger.debug(f"Adding implicit Date Separator: {date}")
                                 messages.append({'type': 'date_separator', 'text': date})
                             current_date = date
 
                         messages.append({'type': 'system', 'text': sys_text, 'date': date, 'time': time})
                     # Handle potential multi-line messages (append to previous message if conditions met)
                     elif messages and line and messages[-1]['type'] == 'text':
-                        print(f"Appending to previous message: {line[:50]}...")
+                        logger.debug(f"Appending to previous message: {line[:50]}...")
                         messages[-1]['text'] += '\n' + line
                     else:
-                        print(f"Line did not match any pattern: {line[:100]}")
+                        logger.debug(f"Line did not match any pattern: {line[:100]}")
 
 
     except FileNotFoundError:
-        print(f"Error: Chat file not found at {file_path}")
+        logger.debug(f"Error: Chat file not found at {file_path}")
         return None, None
     except Exception as e:
-        print(f"Error parsing chat file: {e}")
+        logger.debug(f"Error parsing chat file: {e}")
         import traceback
         traceback.print_exc() # Print full traceback for debugging
         return None, None
 
-    print("\nParsing complete.")
+    logger.debug("\nParsing complete.")
     if not messages:
-        print("Warning: No messages were parsed.")
+        logger.debug("Warning: No messages were parsed.")
     else:
-        print(f"Successfully parsed {len(messages)} items (messages/separators) and found {len(media_items)} media items.")
+        logger.debug(
+            f"Successfully parsed {len(messages)} items (messages/separators) and found {len(media_items)} media items."
+        )
 
     return messages, media_items
 
